@@ -6,7 +6,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Register</title>
+    <title>Login</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -16,31 +16,10 @@
     <div class="w-full min-h-screen bg-zinc-900 text-white p-10">
 
         <h3 class="text-3xl mb-5">
-            Create Account
+            Login Your Account
         </h3>
 
-        <form action="/register" method="post">
-
-            <input
-                class="px-3 py-2 rounded-md outline-none bg-transparent border-2 border-zinc-800"
-                type="text"
-                name="username"
-                placeholder="Username"
-            >
-
-            <input
-                class="px-3 py-2 rounded-md outline-none bg-transparent border-2 border-zinc-800"
-                type="text"
-                name="name"
-                placeholder="Name"
-            >
-
-            <input
-                class="px-3 py-2 rounded-md outline-none bg-transparent border-2 border-zinc-800"
-                type="number"
-                name="age"
-                placeholder="Age"
-            >
+        <form action="/login" method="post">
 
             <input
                 class="px-3 py-2 rounded-md outline-none bg-transparent border-2 border-zinc-800"
@@ -59,16 +38,10 @@
             <input
                 class="px-5 py-2 rounded-md bg-blue-500"
                 type="submit"
-                value="Create Account"
+                value="Login"
             >
 
         </form>
-
-        <br>
-
-        <a href="/login" class="text-blue-400">
-            Already have an account? Login
-        </a>
 
     </div>
 
