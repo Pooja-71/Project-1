@@ -21,6 +21,11 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
+// Profile page
+app.get("/profile", isLoggedIn, (req, res) => {
+  res.render("profile");
+});
+
 // Register
 app.post("/register", async (req, res) => {
   let { email, password, username, name, age } = req.body;
@@ -41,9 +46,16 @@ app.post("/register", async (req, res) => {
         password: hash,
       });
 
-      let token = jwt.sign({ email: email, userid: user._id }, "shhhh");
+      let token = jwt.sign(
+        {
+          email: email,
+          userid: user._id,
+        },
+        "shhhh",
+      );
 
       res.cookie("token", token);
+
       res.send("registered");
     });
   });
@@ -61,12 +73,19 @@ app.post("/login", async (req, res) => {
 
   bcrypt.compare(password, user.password, function (err, result) {
     if (result) {
-      let token = jwt.sign({ email: email, userid: user._id }, "shhhh");
+      let token = jwt.sign(
+        {
+          email: email,
+          userid: user._id,
+        },
+        "shhhh",
+      );
 
       res.cookie("token", token);
-      return res.status(200).send("You can login");
+
+      res.status(200).redirect("/profile");
     } else {
-      return res.redirect("/login");
+      res.redirect("/login");
     }
   });
 });
@@ -81,7 +100,7 @@ app.get("/logout", (req, res) => {
 // Check if user is logged in
 function isLoggedIn(req, res, next) {
   if (req.cookies.token === "") {
-    return res.send("You must be logged in");
+    return res.redirect("/login");
   }
 
   try {
@@ -91,7 +110,7 @@ function isLoggedIn(req, res, next) {
 
     next();
   } catch (err) {
-    return res.send("You must be logged in");
+    return res.redirect("/login");
   }
 }
 
