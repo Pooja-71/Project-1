@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const userModel = require("./models/user");
+const postModel = require("./models/post"); // Added post model
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -21,9 +22,42 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
-// Profile page
-app.get("/profile", isLoggedIn, (req, res) => {
-  res.render("profile");
+// Profile page (finds user & populates their posts)
+app.get("/profile", isLoggedIn, async (req, res) => {
+  let user = await userModel
+    .findOne({ email: req.user.email })
+    .populate("posts");
+  res.render("profile", { user });
+});
+
+// Create Post Route
+app.post("/post", isLoggedIn, async (req, res) => {
+  let user = await userModel.findOne({ email: req.user.email });
+  let { content } = req.body;
+
+  let post = await postModel.create({
+    user: user._id,
+    content,
+  });
+
+  user.posts.push(post._id);
+  await user.save();
+
+  res.redirect("/profile");
+});
+
+// Like / Unlike Route
+app.get("/like/:id", isLoggedIn, async (req, res) => {
+  let post = await postModel.findOne({ _id: req.params.id }).populate("user");
+
+  if (post.likes.indexOf(req.user.userid) === -1) {
+    post.likes.push(req.user.userid);
+  } else {
+    post.likes.splice(post.likes.indexOf(req.user.userid), 1);
+  }
+
+  await post.save();
+  res.redirect("/profile");
 });
 
 // Register
@@ -55,8 +89,7 @@ app.post("/register", async (req, res) => {
       );
 
       res.cookie("token", token);
-
-      res.send("registered");
+      res.redirect("/profile"); // Redirects directly to profile upon registration
     });
   });
 });
@@ -82,7 +115,6 @@ app.post("/login", async (req, res) => {
       );
 
       res.cookie("token", token);
-
       res.status(200).redirect("/profile");
     } else {
       res.redirect("/login");
@@ -93,21 +125,18 @@ app.post("/login", async (req, res) => {
 // Logout
 app.get("/logout", (req, res) => {
   res.cookie("token", "");
-
   res.redirect("/login");
 });
 
-// Check if user is logged in
+// Auth Middleware
 function isLoggedIn(req, res, next) {
-  if (req.cookies.token === "") {
+  if (!req.cookies.token || req.cookies.token === "") {
     return res.redirect("/login");
   }
 
   try {
     let data = jwt.verify(req.cookies.token, "shhhh");
-
     req.user = data;
-
     next();
   } catch (err) {
     return res.redirect("/login");
