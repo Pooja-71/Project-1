@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const userModel = require("./models/user");
-const postModel = require("./models/post"); // Added post model
+const postModel = require("./models/post");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -22,7 +22,7 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
-// Profile page (finds user & populates their posts)
+// Profile page
 app.get("/profile", isLoggedIn, async (req, res) => {
   let user = await userModel
     .findOne({ email: req.user.email })
@@ -30,7 +30,36 @@ app.get("/profile", isLoggedIn, async (req, res) => {
   res.render("profile", { user });
 });
 
-// Create Post Route
+// Edit Post Page
+app.get("/edit/:id", isLoggedIn, async (req, res) => {
+  let post = await postModel.findOne({ _id: req.params.id }).populate("user");
+  res.render("edit", { post });
+});
+
+// Update Post
+app.post("/update/:id", isLoggedIn, async (req, res) => {
+  await postModel.findOneAndUpdate(
+    { _id: req.params.id },
+    { content: req.body.content },
+  );
+  res.redirect("/profile");
+});
+
+// Like / Unlike Post
+app.get("/like/:id", isLoggedIn, async (req, res) => {
+  let post = await postModel.findOne({ _id: req.params.id }).populate("user");
+
+  if (post.likes.indexOf(req.user.userid) === -1) {
+    post.likes.push(req.user.userid);
+  } else {
+    post.likes.splice(post.likes.indexOf(req.user.userid), 1);
+  }
+
+  await post.save();
+  res.redirect("/profile");
+});
+
+// Create Post
 app.post("/post", isLoggedIn, async (req, res) => {
   let user = await userModel.findOne({ email: req.user.email });
   let { content } = req.body;
@@ -43,20 +72,6 @@ app.post("/post", isLoggedIn, async (req, res) => {
   user.posts.push(post._id);
   await user.save();
 
-  res.redirect("/profile");
-});
-
-// Like / Unlike Route
-app.get("/like/:id", isLoggedIn, async (req, res) => {
-  let post = await postModel.findOne({ _id: req.params.id }).populate("user");
-
-  if (post.likes.indexOf(req.user.userid) === -1) {
-    post.likes.push(req.user.userid);
-  } else {
-    post.likes.splice(post.likes.indexOf(req.user.userid), 1);
-  }
-
-  await post.save();
   res.redirect("/profile");
 });
 
@@ -89,7 +104,7 @@ app.post("/register", async (req, res) => {
       );
 
       res.cookie("token", token);
-      res.redirect("/profile"); // Redirects directly to profile upon registration
+      res.redirect("/profile");
     });
   });
 });
@@ -128,7 +143,7 @@ app.get("/logout", (req, res) => {
   res.redirect("/login");
 });
 
-// Auth Middleware
+// Check if user is logged in
 function isLoggedIn(req, res, next) {
   if (!req.cookies.token || req.cookies.token === "") {
     return res.redirect("/login");
